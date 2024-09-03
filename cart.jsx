@@ -211,17 +211,23 @@ const Products = () => {
   const restockProducts = (url) => {
     console.log("Restocking products from URL:", url);
     doFetch(url);
-    let newItems = data.map((item) => {
+  
+    // Ensure data is an array before mapping
+    const newItems = Array.isArray(data) ? data.map((item) => {
       let { name, country, cost, instock } = item;
       return { name, country, cost, instock };
-    });
-    setItems(items.map(existingItem => {
-      const newItem = newItems.find(item => item.name === existingItem.name);
-      return newItem ? { ...existingItem, stock: existingItem.stock + newItem.instock } : existingItem;
-    }));
-    console.log("Updated items after restock:", items);
-  };
+    }) : [];
 
+    setItems(prevItems => {
+      const updatedItems = prevItems.map(existingItem => {
+        const newItem = newItems.find(item => item.name === existingItem.name);
+        return newItem ? { ...existingItem, stock: existingItem.stock + newItem.instock } : existingItem;
+      });
+    
+      console.log("Updated items after restock:", updatedItems);
+      return updatedItems;
+    });
+  };
   return (
     <Container fluid className="vh-100 d-flex flex-column">
       <Row className="bg-primary text-white py-3 mb-4">
@@ -250,8 +256,8 @@ const Products = () => {
             <h2 className="text-primary">Restock Products</h2>
             <Form
               onSubmit={(event) => {
-                restockProducts(`http://localhost:1337/api/${query}`);
                 event.preventDefault();
+                restockProducts(query);
               }}
             >
               <Form.Group>
@@ -266,7 +272,6 @@ const Products = () => {
               <Button variant="primary" type="submit" className="w-100">Restock Products</Button>
             </Form>
           </div>
-
           <div className="col-md-2 col-lg-4 "> 
             <Card className="bg-light h-100">
               <Card.Body className="d-flex flex-column justify-content-center">
