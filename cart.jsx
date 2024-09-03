@@ -208,26 +208,38 @@ const Products = () => {
     setCart([]);
   };
 
-  const restockProducts = (url) => {
+  const restockProducts = async (url) => {
     console.log("Restocking products from URL:", url);
-    doFetch(url);
-  
-    // Ensure data is an array before mapping
-    const newItems = Array.isArray(data) ? data.map((item) => {
-      let { name, country, cost, instock } = item;
-      return { name, country, cost, instock };
-    }) : [];
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Fetched data:", data);
+      
+      let newItems = data.data.map((item) => {
+        let { attributes } = item;
+        return { 
+          name: attributes.name, 
+          country: attributes.country, 
+          cost: attributes.cost, 
+          instock: attributes.instock 
+        };
+      });
 
-    setItems(prevItems => {
-      const updatedItems = prevItems.map(existingItem => {
+      setItems(prevItems => prevItems.map(existingItem => {
         const newItem = newItems.find(item => item.name === existingItem.name);
         return newItem ? { ...existingItem, stock: existingItem.stock + newItem.instock } : existingItem;
-      });
-    
-      console.log("Updated items after restock:", updatedItems);
-      return updatedItems;
-    });
+      }));
+
+      console.log("Items after restocking:", items);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
   };
+
+  
   return (
     <Container fluid className="vh-100 d-flex flex-column">
       <Row className="bg-primary text-white py-3 mb-4">
@@ -272,6 +284,7 @@ const Products = () => {
               <Button variant="primary" type="submit" className="w-100">Restock Products</Button>
             </Form>
           </div>
+
           <div className="col-md-2 col-lg-4 "> 
             <Card className="bg-light h-100">
               <Card.Body className="d-flex flex-column justify-content-center">
@@ -282,9 +295,6 @@ const Products = () => {
           </div>
         </Col>
       </Row>
-
-
-
     </Container>
   );
 };
