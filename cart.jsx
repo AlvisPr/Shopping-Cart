@@ -31,10 +31,12 @@ const useDataApi = (initialUrl, initialData) => {
       dispatch({ type: "FETCH_INIT" });
       try {
         const result = await axios(url);
+        console.log("Fetched data:", result.data);
         if (!didCancel) {
           dispatch({ type: "FETCH_SUCCESS", payload: result.data });
         }
       } catch (error) {
+        console.error("Fetch error:", error);
         if (!didCancel) {
           dispatch({ type: "FETCH_FAILURE" });
         }
@@ -91,9 +93,9 @@ const Products = () => {
     Form,
   } = ReactBootstrap;
   const { useState } = React;
-  const [query, setQuery] = useState("http://localhost:1337/products");
+  const [query, setQuery] = useState("http://localhost:1337/api/products");
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
-    "http://localhost:1337/products",
+    "http://localhost:1337/api/products",
     {
       data: [],
     }
@@ -103,6 +105,7 @@ const Products = () => {
     let name = e.target.name;
     let item = items.find((item) => item.name === name);
     if (item && item.stock > 0) {
+      console.log("Adding to cart:", item);
       setCart([...cart, item]);
       setItems(items.map(i =>
         i.name === name ? { ...i, stock: i.stock - 1 } : i
@@ -112,6 +115,7 @@ const Products = () => {
 
   const deleteCartItem = (index) => {
     let itemToDelete = cart[index];
+    console.log("Deleting from cart:", itemToDelete);
     let newCart = cart.filter((item, i) => index !== i);
     setCart(newCart);
 
@@ -185,6 +189,7 @@ const Products = () => {
 
   const finalList = () => {
     let total = checkOut();
+    console.log("Final total:", total);
     return { total };
   };
 
@@ -192,16 +197,19 @@ const Products = () => {
     let costs = cart.map((item) => item.cost);
     const reducer = (accum, current) => accum + current;
     let newTotal = costs.reduce(reducer, 0);
+    console.log("Checkout total:", newTotal);
     return newTotal;
   };
 
   const handleCheckout = () => {
     let total = checkOut();
+    console.log("Handling checkout. Total:", total);
     setTotal(total);
     setCart([]);
   };
 
   const restockProducts = (url) => {
+    console.log("Restocking products from URL:", url);
     doFetch(url);
     let newItems = data.map((item) => {
       let { name, country, cost, instock } = item;
@@ -211,6 +219,7 @@ const Products = () => {
       const newItem = newItems.find(item => item.name === existingItem.name);
       return newItem ? { ...existingItem, stock: existingItem.stock + newItem.instock } : existingItem;
     }));
+    console.log("Updated items after restock:", items);
   };
 
   return (
@@ -241,7 +250,7 @@ const Products = () => {
             <h2 className="text-primary">Restock Products</h2>
             <Form
               onSubmit={(event) => {
-                restockProducts(`http://localhost:1337/${query}`);
+                restockProducts(`http://localhost:1337/api/${query}`);
                 event.preventDefault();
               }}
             >
