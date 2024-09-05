@@ -113,20 +113,21 @@ const Products = () => {
     }
   };
 
-  const deleteCartItem = (index) => {
-    let itemToDelete = cart[index];
-    console.log("Deleting from cart:", itemToDelete);
-    let newCart = cart.filter((item, i) => index !== i);
-    setCart(newCart);
+  const deleteCartItem = (name) => {
+    console.log("Removing one unit from cart:", name);
+    let itemIndex = cart.findIndex(item => item.name === name);
+    if (itemIndex !== -1) {
+      let newCart = [...cart];
+      newCart.splice(itemIndex, 1);
+      setCart(newCart);
 
-    setItems(items.map(item =>
-      item.name === itemToDelete.name
-        ? { ...item, stock: item.stock + 1 }
-        : item
-    ));
-  };
-
-  const list = items.map((item, index) => {
+      setItems(items.map(item =>
+        item.name === name
+          ? { ...item, stock: item.stock + 1 }
+          : item
+      ));
+    }
+  };  const list = items.map((item, index) => {
     let imageUrl;
     switch (item.name.toLowerCase()) {
       case 'apples':
@@ -146,48 +147,92 @@ const Products = () => {
     }
 
     return (
-      <Col key={index} xs={12} sm={6} md={4} lg={3} className="mb-4">
-        <Card>
-          <Card.Img variant="top" src={imageUrl} style={{ height: '300px', objectFit: 'cover' }} />
-          <Card.Body>
-            <Card.Title className="font-weight-bold">{item.name}</Card.Title>
-            <Card.Text className="text-muted">
-              Price: <span className="text-primary font-weight-bold">${item.cost}</span> - Stock: <span className="text-success">{item.stock}</span>
+      <Col key={index} xs={6} sm={4} md={3} lg={3} className="mb-3">
+        <Card className="h-100 shadow-sm">
+          <Card.Img 
+            variant="top" 
+            src={imageUrl} 
+            style={{ height: '100px', objectFit: 'cover' }} 
+          />
+          <Card.Body className="p-3">
+            <Card.Title className="h6 mb-1" style={{ fontSize: '0.9rem' }}>{item.name}</Card.Title>
+            <Card.Text className="small text-muted mb-1" style={{ fontSize: '0.8rem' }}>
+              ${item.cost} | Stock: {item.stock}
             </Card.Text>
             <Button
               variant="primary"
+              size="sm"
               name={item.name}
               onClick={addToCart}
               disabled={item.stock === 0}
               className="w-100"
+              style={{ fontSize: '0.8rem' }}
             >
-              {item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              {item.stock === 0 ? 'Out' : 'Add'}
             </Button>
           </Card.Body>
         </Card>
       </Col>
     );
   });
+  const cartList = cart.reduce((acc, item) => {
+    const existingItem = acc.find((i) => i.name === item.name);
+    if (existingItem) {
+      return acc.map((i) =>
+        i.name === item.name ? { ...i, quantity: i.quantity + 1 } : i
+      );
+    } else {
+      return [...acc, { ...item, quantity: 1 }];
+    }
+  }, []).map((item, index) => {
+    let imageUrl;
+    switch (item.name.toLowerCase()) {
+      case 'apples':
+        imageUrl = 'https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80';
+        break;
+      case 'oranges':
+        imageUrl = 'https://img.freepik.com/free-photo/orange-fruit_1203-6822.jpg?t=st=1725353547~exp=1725357147~hmac=b6b88abfc1bba2eed7c3b32381bc8eddcb0e23f1b76f8cf16dcdd53b6ba6cebc&w=900';
+        break;
+      case 'beans':
+        imageUrl = 'https://img.freepik.com/free-photo/mountain-almonds_1203-908.jpg?t=st=1725353880~exp=1725357480~hmac=a25ed01bc01d0714b058d3b85ad3a4b5f3fcc31f17fed061d0d4f02f0916a3d3&w=1380';
+        break;
+      case 'cabbage':
+        imageUrl = 'https://img.freepik.com/free-photo/organic-background-green-vegetarian-nutrition_1203-5845.jpg?t=st=1725353782~exp=1725357382~hmac=db9b8e4fb9fef2a1e087c207d3faa37ddd945e38cf0709b50ceeb8aaa420e7be&w=1380';
+        break;
+      default:
+        imageUrl = `https://source.unsplash.com/300x300/?${item.name}`;
+    }
 
-  const cartList = cart.map((item, index) => {
     return (
       <Card key={index} className="mb-2">
-        <Card.Header>
-          <Accordion.Toggle as={Button} variant="link" eventKey={1 + index} className="text-decoration-none">
-            <span className="font-weight-bold">{item.name}</span> - <span className="text-success">${item.cost}</span>
+        <Card.Header className="d-flex align-items-center">
+          <Image 
+            src={imageUrl} 
+            roundedCircle 
+            style={{ width: '40px', height: '40px', objectFit: 'cover' }} 
+            className="mr-3"
+          />
+          <Button 
+            variant="outline-danger" 
+            size="sm" 
+            onClick={() => deleteCartItem(item.name)}
+            className="mr-3"
+          >
+            Remove
+          </Button>
+          <Accordion.Toggle as={Button} variant="link" eventKey={1 + index} className="text-decoration-none flex-grow-1">
+            <span className="font-weight-bold">{item.name}</span> - <span className="text-success">$
+              {item.cost} x {item.quantity}</span>
           </Accordion.Toggle>
         </Card.Header>
         <Accordion.Collapse eventKey={1 + index}>
           <Card.Body>
             <p className="mb-2">Country: <span className="font-italic">{item.country}</span></p>
-            <Button variant="outline-danger" size="sm" onClick={() => deleteCartItem(index)}>Remove</Button>
           </Card.Body>
         </Accordion.Collapse>
       </Card>
     );
-  });
-
-  const finalList = () => {
+  });  const finalList = () => {
     let total = checkOut();
     console.log("Final total:", total);
     return { total };
